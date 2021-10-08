@@ -31,7 +31,8 @@ namespace HotelListing.Data
                     Id = 2,
                     Name = "South Africa",
                     ShortName = "SA"
-                }, new Country()
+                }, 
+                new Country()
                 {
                     Id = 3,
                     Name = "Russia",
@@ -55,7 +56,8 @@ namespace HotelListing.Data
                     Address = "Cape Town",
                     Rating = 4.2,
                     CountryId = 2
-                }, new Hotel()
+                }, 
+                new Hotel()
                 {
                     Id = 3,
                     Name = "Ritz-Carlton",
