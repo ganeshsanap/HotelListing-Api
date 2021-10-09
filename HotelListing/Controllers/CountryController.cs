@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
+using HotelListing.Data;
 using HotelListing.IRepository;
 using HotelListing.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -46,7 +48,7 @@ namespace HotelListing.Controllers
             }
         }
 
-        [HttpGet("{id:int}")]
+        [HttpGet("{id:int}", Name = "GetCountry")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetCountry(int id)
@@ -64,5 +66,65 @@ namespace HotelListing.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrator")]
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> CreateCountry(CreateCountryDTO createCountryDTO)
+        {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogError($"Invalid post attempt on { nameof(CreateCountry) } method.");
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var country = _mapper.Map<Country>(createCountryDTO);
+                await _unitOfWork.Countries.Insert(country);
+                await _unitOfWork.Save();
+
+                return CreatedAtRoute("GetCountry", new { id = country.Id }, country);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Internal server error in { nameof(CreateCountry) } method.");
+                return Problem($"Internal server error in {nameof(CreateCountry)} method. Please try again.", statusCode: 500);
+            }
+        }
+
+        [Authorize]
+        [HttpPut("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UpdateCountry(int id, [FromBody] UpdateCountryDTO updateCountryDTO)
+        {
+            if(!ModelState.IsValid || id < 1)
+            {
+                return BadRequest(ModelState);
+            }
+
+            try
+            {
+                var country = await _unitOfWork.Countries.Get(q => q.Id == id);
+                if (country == null)
+                {
+                    return NotFound();
+                }
+
+                _mapper.Map(updateCountryDTO, country);
+                _unitOfWork.Countries.Update(country);
+                await _unitOfWork.Save();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Internal server error in { nameof(UpdateCountry) } method.");
+                return Problem($"Internal server error in {nameof(UpdateCountry)} method. Please try again.", statusCode: 500);
+            }
+        }
     }
 }
