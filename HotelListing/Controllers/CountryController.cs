@@ -126,5 +126,37 @@ namespace HotelListing.Controllers
                 return Problem($"Internal server error in {nameof(UpdateCountry)} method. Please try again.", statusCode: 500);
             }
         }
+
+        [Authorize(Roles = "Administrator")]
+        [HttpDelete("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> DeleteCountry(int id)
+        {
+            if (id < 1)
+            {
+                return BadRequest();
+            }
+
+            try
+            {
+                var country = await _unitOfWork.Countries.Get(q => q.Id == id);
+                if (country == null)
+                {
+                    return NotFound();
+                }
+
+                await _unitOfWork.Countries.Delete(id);
+                await _unitOfWork.Save();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Internal server error in { nameof(DeleteCountry) } method.");
+                return Problem($"Internal server error in {nameof(DeleteCountry)} method. Please try again.", statusCode: 500);
+            }
+        }
     }
 }

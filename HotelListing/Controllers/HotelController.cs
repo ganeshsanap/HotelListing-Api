@@ -110,7 +110,7 @@ namespace HotelListing.Controllers
             try
             {
                 var hotel = await _unitOfWork.Hotels.Get(q => q.Id == id);
-                
+
                 if (hotel == null)
                 {
                     return NotFound();
@@ -130,5 +130,36 @@ namespace HotelListing.Controllers
             }
         }
 
+        [Authorize(Roles = "Administrator")]
+        [HttpDelete("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> DeleteHotel(int id)
+        {
+            if (id < 1)
+            {
+                return BadRequest();
+            }
+
+            try
+            {
+                var hotel = await _unitOfWork.Hotels.Get(q => q.Id == id);
+                if(hotel == null)
+                {
+                    return NotFound();
+                }
+
+                await _unitOfWork.Hotels.Delete(id);
+                await _unitOfWork.Save();
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Internal server error in { nameof(DeleteHotel) } method.");
+                return Problem($"Internal server error in {nameof(DeleteHotel)} method. Please try again.", statusCode: 500);
+            }
+        }
     }
 }
