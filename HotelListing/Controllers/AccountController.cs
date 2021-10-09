@@ -22,7 +22,7 @@ namespace HotelListing.Controllers
         private readonly IMapper _mapper;
 
         public AccountController(UserManager<ApiUser> userManager,
-            SignInManager<ApiUser> signInManager,
+            //SignInManager<ApiUser> signInManager,
             ILogger<AccountController> logger,
             IMapper mapper)
         {
@@ -62,6 +62,7 @@ namespace HotelListing.Controllers
                     return BadRequest(ModelState);
                 }
 
+                await _userManager.AddToRolesAsync(user, userDTO.Roles);
                 return Accepted();
             }
             catch (Exception ex)

@@ -34,17 +34,17 @@ namespace HotelListing
         {
             services.AddDbContext<DatabaseContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("SqlConnection"))
-            );
+                );
 
             services.AddAuthentication();
             services.ConfigureIdentity();
 
             services.AddCors(c =>
             {
-                c.AddPolicy("CorsPolicy-AllowAll", builder =>
-                builder.AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader());
+                    c.AddPolicy("CorsPolicy-AllowAll", builder =>
+                    builder.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader());
             });
 
             services.AddAutoMapper(typeof(MapperInitilizer));
