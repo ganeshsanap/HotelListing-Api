@@ -1,17 +1,21 @@
 ﻿using HotelListing.Data;
 using HotelListing.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Serilog;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -59,28 +63,51 @@ namespace HotelListing
                     };
                 });
         }
-
-        public static void ConfigureExceptionHandler(this IApplicationBuilder app)
+        
+        public static void ConfigureVersioning(this IServiceCollection services)
         {
-            app.UseExceptionHandler(error =>
+            services.AddApiVersioning(o =>
             {
-                error.Run(async context =>
-                {
-                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                    context.Response.ContentType = "application/json";
-                    var contextFeature = context.Features.Get<IExceptionHandlerFeature>();
-                    if (contextFeature != null)
-                    {
-                        Log.Error($"Error in {contextFeature.Error} method.");
+                o.ReportApiVersions = true;
+                o.AssumeDefaultVersionWhenUnspecified = true;
+                o.DefaultApiVersion = new ApiVersion(1, 0);
+                o.ApiVersionReader = new HeaderApiVersionReader("api-version");
+            });
+        }
 
-                        await context.Response.WriteAsync(new Error
-                        {
-                            StatusCode = context.Response.StatusCode,
-                            Message = "Internal server error. Please try again."
-                        }.ToString());
+        public static void ConfigureSwaggerGen(this IServiceCollection services, IConfiguration Configuration)
+        {
+            services.AddSwaggerGen(swaggerGenOptions =>
+            {
+                var swaggerOptions = new SwaggerOptions();
+                Configuration.GetSection("Swagger").Bind(swaggerOptions);
+
+                foreach (var currentVersion in swaggerOptions.Versions)
+                {
+                    swaggerGenOptions.SwaggerDoc(currentVersion.Name, new OpenApiInfo
+                    {
+                        Title = swaggerOptions.Title,
+                        Version = currentVersion.Name,
+                        Description = swaggerOptions.Description
+                    });
+                }
+
+                swaggerGenOptions.DocInclusionPredicate((version, desc) =>
+                {
+                    if (!desc.TryGetMethodInfo(out MethodInfo methodInfo))
+                    {
+                        return false;
                     }
+                    var versions = methodInfo.DeclaringType.GetConstructors()
+                        .SelectMany(constructorInfo => constructorInfo.DeclaringType.CustomAttributes
+                            .Where(attributeData => attributeData.AttributeType == typeof(ApiVersionAttribute))
+                            .SelectMany(attributeData => attributeData.ConstructorArguments
+                                .Select(attributeTypedArgument => attributeTypedArgument.Value)));
+
+                    return versions.Any(v => $"{v}" == version);
                 });
             });
+
         }
     }
 }
