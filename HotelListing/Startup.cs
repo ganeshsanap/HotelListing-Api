@@ -1,3 +1,4 @@
+using AspNetCoreRateLimit;
 using AutoMapper;
 using HotelListing.Configurations;
 using HotelListing.Data;
@@ -40,6 +41,16 @@ namespace HotelListing
                 options.UseSqlServer(Configuration.GetConnectionString("SqlConnection"))
                 );
 
+            // for Caching
+            services.AddMemoryCache();
+
+            // for Rate Limiting and Throttling
+            services.ConfigureRateLimiting();
+            services.AddHttpContextAccessor();
+
+            //services.AddResponseCaching();
+            services.ConfigureHttpCacheHeader();
+
             services.AddAuthentication();
             services.ConfigureIdentity();
             services.ConfigureJWT(Configuration);
@@ -54,6 +65,7 @@ namespace HotelListing
 
             services.AddAutoMapper(typeof(MapperInitilizer));
 
+            services.AddSingleton<IProcessingStrategy, AsyncKeyLockProcessingStrategy>();
             services.AddTransient<IUnitOfWork, UnitOfWork>();
             services.AddScoped<IAuthManager, AuthManager>();
 
@@ -67,6 +79,7 @@ namespace HotelListing
                 o.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore
             );
 
+            // for API versioning
             services.ConfigureVersioning();
         }
 
@@ -87,6 +100,13 @@ namespace HotelListing
             app.UseHttpsRedirection();
 
             app.UseCors("CorsPolicy-AllowAll");
+
+            // for Caching
+            app.UseResponseCaching();
+
+            // for Rate Limiting and Throttling
+            app.UseHttpCacheHeaders();
+            app.UseIpRateLimiting();
 
             app.UseRouting();
 
