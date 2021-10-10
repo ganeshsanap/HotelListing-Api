@@ -16,4 +16,8 @@
     <ProjectReference Include="..\HotelListing.Data\HotelListing.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Logs\" />
+  </ItemGroup>
+
 </Project>

@@ -41,7 +41,9 @@ namespace HotelListing.Core
             {
                 foreach (var currentVersion in swaggerOptions.Versions)
                 {
-                    option.SwaggerEndpoint(currentVersion.UiEndpoint, $"{swaggerOptions.Title} {currentVersion.Name}");
+                    //option.SwaggerEndpoint(currentVersion.UiEndpoint, $"{swaggerOptions.Title} {currentVersion.Name}");
+                    string swaggerJsonBasePath = string.IsNullOrWhiteSpace(option.RoutePrefix) ? "." : "..";
+                    option.SwaggerEndpoint($"{swaggerJsonBasePath}{currentVersion.UiEndpoint}", $"{swaggerOptions.Title} {currentVersion.Name}");
                 }
             });
         }
